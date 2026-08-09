@@ -2,6 +2,10 @@ x64/
 ARM64/
 Debug/
 Release/
+# Output of New-Release.ps1. Spelled in lower case as well as upper: git matching is
+# case-sensitive on Linux and macOS, where "Release/" would not cover it.
+release/
+package/
 *.obj
 *.pdb
 *.sys

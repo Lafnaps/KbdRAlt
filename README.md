@@ -183,6 +183,7 @@ with its private key, on every machine that imports it, for the certificate's wh
 | `package-and-sign.ps1` | sign the payload with a locally generated certificate, for a test-signing machine |
 | `New-SubmissionPackage.ps1` | build the CAB for attestation submission |
 | `deploy.ps1` | install: checks code-integrity settings and foreign filters, applies rules, handles `Scancode Map` |
+| `uninstall.ps1` | remove the package and repair the keyboard class `UpperFilters` |
 | `New-Release.ps1` | build the downloadable release artifacts from a clean clone of the published repository |
 | `altgr-probe.ps1` | diagnostic: logs Raw Input vs `WH_KEYBOARD_LL` side by side |
 

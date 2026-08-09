@@ -130,7 +130,32 @@ Get-ChildItem $pkgDir | Select-Object Name, Length | Format-Table -AutoSize
 # not scoped to kernel drivers or to this project. Anything signed with its private key
 # shows up as a trusted publisher on that machine, for the certificate's whole lifetime,
 # with no revocation. Do it on a VM you are willing to throw away, and nowhere else.
+#
+# signtool exits non-zero here and writes to stderr, which under $ErrorActionPreference =
+# 'Stop' turns a SUCCESSFUL run into a red error and a non-zero exit code as the very last
+# thing the user sees. Contain it: the failure is expected and informational.
 "--- catalog signature (trust is not expected to validate here) ---"
-& $signtool verify /pa /v "$pkgDir\kbdralt.cat" 2>&1 |
-    Select-String 'Issued to|SHA1 hash|Number of files' | Out-String
+try {
+    $prev = $ErrorActionPreference
+    $ErrorActionPreference = 'Continue'
+    $verify = & $signtool verify /pa /v "$pkgDir\kbdralt.cat" 2>&1
+} finally { $ErrorActionPreference = $prev }
+($verify | Select-String 'Issued to|SHA1 hash|Number of files' | Out-String).Trim()
+"(a chain error above is normal — the certificate is trusted only where you import it)"
+
+@"
+
+NEXT STEPS
+  1. Copy the package folder to the test machine:
+       $pkgDir
+  2. On THAT machine only, import kbdralt-test.cer into Root and TrustedPublisher.
+     It is a machine-wide trust anchor for anything signed with its key — use a VM you
+     are willing to throw away.
+  3. Check, without installing:
+       powershell -ExecutionPolicy Bypass -File .\deploy.ps1 -WhatIfOnly
+  4. Install, then reboot.
+
+Signing and installing do not have to happen on the same machine: this step needs the
+Windows SDK/WDK, the install does not.
+"@
 exit 0

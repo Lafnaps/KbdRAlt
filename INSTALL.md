@@ -59,9 +59,14 @@ would rewrite your keyboard configuration and leave you with a driver that never
 Test mode is machine-wide, not per-driver. It puts a watermark on the desktop and it
 breaks kernel anti-cheat systems (Vanguard, EAC, BattlEye).
 
-You also need the Windows SDK/WDK 10.0.26100 for `signtool`, `Inf2Cat` and `infverif` —
-`package-and-sign.ps1` uses all three. If you are installing the WDK anyway, building from
-source is barely more work; see [BUILDING.md](BUILDING.md).
+Signing needs the Windows SDK/WDK 10.0.26100, for `signtool`, `Inf2Cat` and `infverif`.
+**It does not have to be the same machine you install on** — sign on your workstation,
+copy the resulting `package\` folder to the test machine, install there. That is the
+normal arrangement: the machine you are willing to run an unsigned kernel driver on is
+rarely the machine you keep a toolchain on.
+
+If you are installing the WDK anyway, building from source is barely more work; see
+[BUILDING.md](BUILDING.md).
 
 ## 2. Sign the payload
 
@@ -145,13 +150,26 @@ ordering above. It runs unelevated and asks for administrator rights only when s
 ## 7. Uninstall
 
 ```powershell
+powershell -ExecutionPolicy Bypass -File .\uninstall.ps1 -WhatIfOnly
+powershell -ExecutionPolicy Bypass -File .\uninstall.ps1
+```
+
+It finds the `oemNN.inf` the package was renamed to in the driver store, removes it, and
+then checks the class `UpperFilters` and repairs it from the backup file if `kbdralt` is
+still listed — removing a driver package does not reliably undo the class-level registry
+value the INF wrote, and a filter entry pointing at a driver that is no longer installed is
+not a state to leave a keyboard stack in. Add `-Purge` to drop the service key and the
+stored rules as well. Reboot afterwards.
+
+By hand, if you would rather:
+
+```powershell
 pnputil /enum-drivers          # find the oemNN.inf whose Original Name is kbdralt.inf
 pnputil /delete-driver oemNN.inf /uninstall /force
 ```
 
-Then check `UpperFilters` under
-`HKLM\SYSTEM\CurrentControlSet\Control\Class\{4D36E96B-E325-11CE-BFC1-08002BE10318}` and
-restore it from the backup file if `kbdralt` is still listed. Reboot.
+then check `UpperFilters` under
+`HKLM\SYSTEM\CurrentControlSet\Control\Class\{4D36E96B-E325-11CE-BFC1-08002BE10318}`.
 
 Turn test signing back off when you are done:
 

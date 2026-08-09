@@ -56,7 +56,13 @@ function ConvertTo-Key([string]$text) {
     [pscustomobject]@{ Scan = $scan; Ext = $ext }
 }
 
-$parsed = foreach ($line in $Rule) {
+# @(...) is load-bearing, not decoration. A foreach that yields exactly ONE object returns
+# that object, not a one-element array, and in Windows PowerShell 5.1 a PSCustomObject has
+# no .Count — it evaluates to $null. The blob below would then declare Count = 0, which the
+# driver rejects, so it would discard the whole table and fall back to its built-in rule
+# while the script reported success. The size assertion further down catches it, but only
+# because this wrapper is the actual fix.
+$parsed = @(foreach ($line in $Rule) {
     if ($line -notmatch '^\s*(?<in>[^=]+?)\s*=\s*(?<mode>\w+)\s*:\s*(?<out>.+?)\s*$') {
         throw "cannot parse rule: '$line'"
     }
@@ -73,7 +79,8 @@ $parsed = foreach ($line in $Rule) {
         throw "remap mode requires exactly one output in '$line'"
     }
     [pscustomobject]@{ In = $inKey; Mode = $MODE[$modeName]; Out = $outKeys; Text = $line.Trim() }
-}
+})
+if ($parsed.Count -eq 0) { throw "no rules given" }
 
 # Two rules for the same input key is almost certainly a typo. The driver rejects such a
 # table wholesale and silently falls back to the built-in rule, so catch it here where we

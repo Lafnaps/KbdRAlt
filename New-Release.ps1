@@ -68,7 +68,9 @@ $ErrorActionPreference = 'Stop'
 
 $version4 = "$Version.0"
 if (-not $OutDir)  { $OutDir  = Join-Path $PSScriptRoot "release\v$Version" }
-if (-not $WorkDir) { $WorkDir = Join-Path ([IO.Path]::GetTempPath()) "kbdralt-release-$Version" }
+# Not under %TEMP%: MSBuild warns (MSB8029) when the intermediate directory lives there,
+# and a warning in a release build is noise nobody should have to learn to ignore.
+if (-not $WorkDir) { $WorkDir = Join-Path $env:LOCALAPPDATA "kbdralt-release\v$Version" }
 
 $kit      = 'C:\Program Files (x86)\Windows Kits\10'
 $infverif = "$kit\Tools\10.0.26100.0\x64\infverif.exe"
@@ -295,7 +297,7 @@ New-Release.ps1 reproduces these artifacts from that commit.
 # Staged by explicit filename — never by archiving x64\, which also holds .obj, .pdb, logs
 # and a stale Debug tree.
 Copy-Item $sys, $inf $driverStage
-foreach ($f in 'package-and-sign.ps1', 'deploy.ps1', 'Set-KbdRAltRules.ps1',
+foreach ($f in 'package-and-sign.ps1', 'deploy.ps1', 'uninstall.ps1', 'Set-KbdRAltRules.ps1',
                'INSTALL.md', 'RECOVERY.md', 'README.md') {
     $p = Join-Path $src $f
     if (-not (Test-Path $p)) { throw "$f is missing from the published tree — cannot stage the driver archive" }
