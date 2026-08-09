@@ -16,14 +16,20 @@ User-mode remappers (AutoHotkey, kanata/kmonad in LLHOOK mode, PowerToys) cannot
 on the secure desktop, on the logon screen, or before the user session exists. They also
 die with their process.
 
-The only general-purpose signed keyboard filter that ever existed —
-[Interception](https://github.com/oblitum/Interception) — is effectively dead: its
-signature does not satisfy HVCI, and on current Windows 11 it can leave the machine
-without a working keyboard. Everything built on top of it inherits that.
+The closest thing to a general-purpose keyboard filter for Windows has been
+[Interception](https://github.com/oblitum/Interception), and it has been unmaintained for
+years. Its users report devices that stop responding after reconnection, and machines where
+it will not load under Memory Integrity. Everything built on top of it inherits that.
 
-As of early 2026 the kanata maintainer explicitly asks the community for an open-source
-replacement. This driver is a small, focused answer to that: it does key→key and
-key→chord translation in the kernel, and nothing else.
+kanata's README has carried an open invitation since 2022: *"If you know anything about
+writing a keyboard driver for Windows, starting an open-source alternative to the
+Interception driver would be lovely."*
+
+**This is not that**, and the difference matters. kanata and the other downstream tools
+consume Interception's *user-mode API*; kbdralt deliberately exposes none. It is a
+self-contained rule table applied in the kernel, so nothing can be scripted on top of it —
+you configure it and it runs. What it does have in common with the wish is that it is a
+working KMDF keyboard filter under a free licence, which is the part that did not exist.
 
 ## Status
 
