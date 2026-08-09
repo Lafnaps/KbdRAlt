@@ -187,6 +187,22 @@ with its private key, on every machine that imports it, for the certificate's wh
 | `New-Release.ps1` | build the downloadable release artifacts from a clean clone of the published repository |
 | `altgr-probe.ps1` | diagnostic: logs Raw Input vs `WH_KEYBOARD_LL` side by side |
 
+All scripts are saved as UTF-8 **with** a byte-order mark. Windows PowerShell 5.1 reads a
+BOM-less file as ANSI, and one em dash in a comment is then enough to stop it parsing.
+
+### Which build am I running?
+
+The driver binary is not in `System32\drivers` — a primitive driver package stays in the
+Driver Store. Follow the service's `ImagePath`:
+
+```powershell
+$ip = (Get-ItemProperty 'HKLM:\SYSTEM\CurrentControlSet\Services\kbdralt').ImagePath
+(Get-Item ($ip -replace '^\\SystemRoot\\', "$env:SystemRoot\")).VersionInfo |
+    Format-List FileVersion, CompanyName
+```
+
+Include that, and the configurator's own version, in any bug report.
+
 `deploy.ps1 -WhatIfOnly` runs every check and installs nothing — the right first
 invocation on any machine. `-PackageDir` overrides where it looks for the signed package;
 by default it tries the build output, then a `package\` folder beside the script, then the

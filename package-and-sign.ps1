@@ -107,12 +107,16 @@ if ($LASTEXITCODE -ne 0) { throw "signtool on .cat returned $LASTEXITCODE" }
 $cerPath = Join-Path $pkgDir 'kbdralt-test.cer'
 Export-Certificate -Cert $cert -FilePath $cerPath | Out-Null
 
-# --- 8. the scripts the package needs to be installable --------------------
-# deploy.ps1 looks for Set-KbdRAltRules.ps1 next to itself; without both, an install
-# silently falls back to the driver's built-in rule.
-foreach ($s in 'deploy.ps1', 'Set-KbdRAltRules.ps1') {
+# --- 8. everything the package needs on the target machine -----------------
+# The package folder is what gets carried to the test machine, and it is usually the ONLY
+# thing that gets carried. deploy.ps1 looks for Set-KbdRAltRules.ps1 next to itself, or the
+# install silently falls back to the driver's built-in rule. uninstall.ps1 and RECOVERY.md
+# matter more than that: needing them is exactly the situation where you cannot go and
+# fetch the rest of the archive.
+foreach ($s in 'deploy.ps1', 'uninstall.ps1', 'Set-KbdRAltRules.ps1', 'RECOVERY.md', 'INSTALL.md') {
     $src = Join-Path $root $s
     if (Test-Path $src) { Copy-Item $src $pkgDir }
+    else { Write-Warning "$s not found next to this script — the package will be missing it" }
 }
 
 "=== done ==="

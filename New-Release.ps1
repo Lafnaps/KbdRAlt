@@ -258,6 +258,26 @@ Get-ChildItem $guiFd, $guiSc -Filter '*.pdb' -ErrorAction SilentlyContinue | For
 Assert-NoAbsolutePaths $guiDll 'the GUI assembly'
 Ok "no local paths embedded in the GUI assembly"
 
+# --- 2a. the scripts must survive Windows PowerShell 5.1 --------------------
+# This project has been bitten by it three times. Windows PowerShell 5.1 reads a .ps1
+# without a byte-order mark as ANSI, so a single em dash in a comment turns into mojibake
+# and the file fails to PARSE — the script never runs at all. It is invisible on this
+# machine, because PowerShell 7 reads UTF-8 regardless, and it is guaranteed on a
+# downloader's default shell.
+Step "scripts: BOM and a real 5.1 parse"
+$ps51 = "$env:SystemRoot\System32\WindowsPowerShell\v1.0\powershell.exe"
+foreach ($s in Get-ChildItem (Join-Path $src '*.ps1')) {
+    $b = [IO.File]::ReadAllBytes($s.FullName)
+    if (-not ($b.Length -ge 3 -and $b[0] -eq 0xEF -and $b[1] -eq 0xBB -and $b[2] -eq 0xBF)) {
+        throw "$($s.Name) has no UTF-8 BOM: Windows PowerShell 5.1 will misread it as ANSI"
+    }
+    if (Test-Path $ps51) {
+        $r = & $ps51 -NoProfile -Command "`$e=`$null;[void][System.Management.Automation.Language.Parser]::ParseFile('$($s.FullName)',[ref]`$null,[ref]`$e);if(`$e.Count){`$e[0].Message}else{'OK'}"
+        if ($r -ne 'OK') { throw "$($s.Name) does not parse under Windows PowerShell 5.1: $r" }
+    }
+}
+Ok "all .ps1 carry a BOM and parse under 5.1"
+
 # --- 3. stage ---------------------------------------------------------------
 Step "stage"
 if (Test-Path $OutDir) { Remove-Item -LiteralPath $OutDir -Recurse -Force }
