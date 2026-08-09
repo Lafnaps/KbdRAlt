@@ -1,4 +1,7 @@
-﻿<#
+﻿# SPDX-License-Identifier: AGPL-3.0-or-later
+# Copyright (c) 2026 Lafnaps
+
+<#
     altgr-probe.ps1 — find out WHERE the Ctrl that accompanies right Alt comes from.
 
     Listens to two independent sources and writes both to one log:

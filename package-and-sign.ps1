@@ -1,4 +1,7 @@
-﻿<#
+﻿# SPDX-License-Identifier: AGPL-3.0-or-later
+# Copyright (c) 2026 Lafnaps
+
+<#
     Builds the driver package and signs it with a self-signed TEST certificate, for use
     on a lab machine with test signing enabled.
 

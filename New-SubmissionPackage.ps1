@@ -1,4 +1,7 @@
-﻿<#
+﻿# SPDX-License-Identifier: AGPL-3.0-or-later
+# Copyright (c) 2026 Lafnaps
+
+<#
     New-SubmissionPackage.ps1 — build the CAB for attestation submission to Partner Center.
 
     HOW THIS DIFFERS FROM package-and-sign.ps1:

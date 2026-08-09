@@ -109,6 +109,12 @@ reads a fixed-layout structure and `Set-KbdRAltRules.ps1` produces it from reada
 
 Keys are set-1 scan codes in hex, optionally prefixed with `E0:` for extended keys.
 
+There is also a **GUI configurator** — see [gui/](gui/) — which writes the same value.
+It shows driver health (including whether the filter is in the correct position relative
+to `kbdclass`), decodes the stored table into readable key names, captures keys by
+pressing them, and validates with the same rules the driver applies. Its output is
+verified byte-identical to the script's.
+
 The blob is validated strictly: version, count, sizes, scan-code ranges, mode/output
 agreement, and duplicate inputs. It is accepted **whole or not at all** — a partially
 applied rule set is worse than none. If the value is missing or invalid, the driver falls
@@ -149,12 +155,12 @@ The driver is shipped as source only. Loading it requires either:
 
 ## Licence
 
-Free for non-commercial use under **AGPL v3 plus a non-commercial restriction**;
-a separate licence is required for commercial use. See [LICENSE](LICENSE).
+**GNU AGPL v3** — see [LICENSE](LICENSE).
 
-In short: use it, read it, modify it, learn from it. If you ship it or build a product
-on it, publish your source under the same terms. If you are a company using it to make
-money, get in touch.
+Use it, read it, modify it, ship it. The one obligation: if you distribute this
+software or a derivative, or make it available to others over a network, the complete
+corresponding source must be available under the same licence. Keeping your changes
+private while shipping them to users is not permitted.
 
-Because of the non-commercial clause this is source-available rather than OSI open
-source, and the licence says so plainly rather than pretending otherwise.
+This is an OSI-approved open source licence. There is no separate commercial track and
+no non-commercial restriction: everyone gets the same terms.

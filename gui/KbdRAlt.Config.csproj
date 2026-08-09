@@ -1,0 +1,22 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net8.0-windows</TargetFramework>
+    <UseWPF>true</UseWPF>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <LangVersion>latest</LangVersion>
+    <AssemblyName>KbdRAltConfig</AssemblyName>
+    <RootNamespace>KbdRAlt.Config</RootNamespace>
+    <ApplicationManifest>app.manifest</ApplicationManifest>
+    <Version>1.0.0</Version>
+    <Company>Lafnaps</Company>
+    <Product>kbdralt configurator</Product>
+    <Copyright>Copyright (c) 2026 Lafnaps. AGPL-3.0-or-later</Copyright>
+    <!-- No external packages on purpose: the tool must build offline from a clean
+         checkout, and a configurator for a kernel driver should not pull in a
+         dependency tree it does not need. -->
+  </PropertyGroup>
+
+</Project>

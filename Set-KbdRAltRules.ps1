@@ -1,4 +1,7 @@
-﻿<#
+﻿# SPDX-License-Identifier: AGPL-3.0-or-later
+# Copyright (c) 2026 Lafnaps
+
+<#
     Set-KbdRAltRules.ps1 — write the kbdralt rule table to the registry.
 
     The driver reads a binary blob (parsing text in kernel mode is a source of bugs);

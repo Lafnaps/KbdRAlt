@@ -1,4 +1,7 @@
-﻿<#
+﻿# SPDX-License-Identifier: AGPL-3.0-or-later
+# Copyright (c) 2026 Lafnaps
+
+<#
     deploy.ps1 — install kbdralt on a machine.
 
     Installs the driver, writes the rule table and, on request, removes a now-redundant

@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: AGPL-3.0-or-later
+// Copyright (c) 2026 Lafnaps
+
 /*++
   rules.c — loading and validating the rule table from the registry.
 
