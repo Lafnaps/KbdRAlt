@@ -103,7 +103,7 @@ body:
       label: Your rule table
       description: The rules you configured, in the syntax `Set-KbdRAltRules.ps1` takes.
       render: text
-      placeholder: |
+      value: |
         E0:38 = chord : 38,2A
         3A    = remap : 29
 
