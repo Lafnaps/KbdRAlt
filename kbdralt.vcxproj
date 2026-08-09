@@ -25,6 +25,36 @@
     <UseDebugLibraries Condition="'$(Configuration)'=='Release'">false</UseDebugLibraries>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+  <PropertyGroup Label="Versioning">
+    <!--
+      Single source of truth for the driver version. It feeds BOTH the VERSIONINFO
+      resource in kbdralt.rc and the INF's DriverVer directive, so the two can never
+      drift apart. Override from the command line for a release build:
+          msbuild ... /p:KbdRAltVersion=0.2.0.0
+      Must be four numeric components: DriverVer accepts nothing else.
+    -->
+    <KbdRAltVersion Condition="'$(KbdRAltVersion)'==''">0.1.0.0</KbdRAltVersion>
+    <!--
+      Split into bare integers for the resource compiler. Parse() also validates the
+      format: a malformed KbdRAltVersion fails the build here instead of silently
+      producing a binary stamped 0.0.0.0. Note System.Version names the last two
+      components Build and Revision, not Patch and Build.
+    -->
+    <KbdRAltVerMajor>$([System.Version]::Parse('$(KbdRAltVersion)').Major)</KbdRAltVerMajor>
+    <KbdRAltVerMinor>$([System.Version]::Parse('$(KbdRAltVersion)').Minor)</KbdRAltVerMinor>
+    <KbdRAltVerBuild>$([System.Version]::Parse('$(KbdRAltVersion)').Build)</KbdRAltVerBuild>
+    <KbdRAltVerRevision>$([System.Version]::Parse('$(KbdRAltVersion)').Revision)</KbdRAltVerRevision>
+    <!--
+      DriverVer date. The WDK default is '*', meaning the build date, which makes a build
+      non-reproducible. A release pins it so that rebuilding the tagged source yields the
+      identical INF:
+          msbuild ... /p:KbdRAltDriverVerDate=08/09/2026
+      Windows ranks driver packages by this DATE first and only then by version, so it is
+      not cosmetic: pinning it to an old date on a new release would make the new package
+      lose to the old one.
+    -->
+    <KbdRAltDriverVerDate Condition="'$(KbdRAltDriverVerDate)'==''">*</KbdRAltDriverVerDate>
+  </PropertyGroup>
   <PropertyGroup>
     <SpectreMitigation>Spectre</SpectreMitigation>
     <!--
@@ -47,16 +77,36 @@
       <WarningLevel>Level4</WarningLevel>
       <TreatWarningAsError>true</TreatWarningAsError>
     </ClCompile>
+    <ResourceCompile>
+      <!-- Integers only. See the comment block in kbdralt.rc for why. -->
+      <PreprocessorDefinitions>KBDRALT_VER_MAJOR=$(KbdRAltVerMajor);KBDRALT_VER_MINOR=$(KbdRAltVerMinor);KBDRALT_VER_BUILD=$(KbdRAltVerBuild);KBDRALT_VER_REVISION=$(KbdRAltVerRevision);%(PreprocessorDefinitions)</PreprocessorDefinitions>
+    </ResourceCompile>
+    <Link>
+      <!--
+        Without this the linker records the ABSOLUTE path of the .pdb inside the .sys, so
+        a published binary would carry the maintainer's local directory layout. Everything
+        else in this project was scrubbed of internal paths; the binary should match.
+        A bare filename still lets a debugger find the symbols when they sit next to it.
+      -->
+      <AdditionalOptions>%(AdditionalOptions) /PDBALTPATH:$(TargetName).pdb</AdditionalOptions>
+    </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="kbdralt.c" />
     <ClCompile Include="rules.c" />
   </ItemGroup>
   <ItemGroup>
+    <ResourceCompile Include="kbdralt.rc" />
+  </ItemGroup>
+  <ItemGroup>
     <ClInclude Include="kbdralt.h" />
   </ItemGroup>
   <ItemGroup>
-    <Inf Include="kbdralt.inf" />
+    <Inf Include="kbdralt.inf">
+      <!-- Confusingly named: this metadata is stampinf's -v, the DriverVer VERSION. -->
+      <TimeStamp>$(KbdRAltVersion)</TimeStamp>
+      <DateStamp>$(KbdRAltDriverVerDate)</DateStamp>
+    </Inf>
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
 </Project>

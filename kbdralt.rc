@@ -1,0 +1,88 @@
+// SPDX-License-Identifier: AGPL-3.0-or-later
+// Copyright (c) 2026 Lafnaps
+
+//
+// Version resource for kbdralt.sys.
+//
+// WHY THIS FILE EXISTS: without a VERSIONINFO resource the binary has no identity at
+// all. Explorer's Details tab is blank, Device Manager's driver details show no version,
+// `driverquery /v` and `Get-CimInstance Win32_SystemDriver` report nothing useful, and a
+// bug report reduces to "I downloaded it some time ago". For a driver that people are
+// expected to DOWNLOAD rather than build, that is not acceptable.
+//
+// The version numbers arrive from the build as preprocessor definitions so that a single
+// MSBuild property, KbdRAltVersion, drives both this resource and the INF's DriverVer.
+// See kbdralt.vcxproj. The fallback below is deliberately 0.0.0.0: a binary built outside
+// that wiring should look obviously unversioned rather than quietly claim a real release.
+//
+// ONLY BARE INTEGERS are passed in, and the dotted string is assembled here. That is not
+// stylistic. rc.exe mangles a /D whose value contains quotes: MSBuild correctly emits
+// /D "KBDRALT_VERSION_STR=\"0.1.0.0\"", rc strips the inner quotes, and the resulting
+// VALUE "FileVersion", 0.1.0.0 is not a string literal. rc accepts it WITHOUT ANY
+// WARNING and emits a StringFileInfo block that no version parser can read — every field
+// comes back empty, including the ones that were perfectly fine. Integers survive the
+// round trip intact; quotes and commas do not.
+//
+// The VERSIONINFO constants are spelled out numerically instead of pulling in <winver.h>.
+// A kernel-mode driver project's resource include path is not guaranteed to carry the
+// user-mode SDK headers, and four documented constants are not worth a fragile include.
+//
+
+#ifndef KBDRALT_VER_MAJOR
+#define KBDRALT_VER_MAJOR 0
+#endif
+#ifndef KBDRALT_VER_MINOR
+#define KBDRALT_VER_MINOR 0
+#endif
+#ifndef KBDRALT_VER_BUILD
+#define KBDRALT_VER_BUILD 0
+#endif
+#ifndef KBDRALT_VER_REVISION
+#define KBDRALT_VER_REVISION 0
+#endif
+
+#define KBDRALT_STRINGIZE_(x) #x
+#define KBDRALT_STRINGIZE(x)  KBDRALT_STRINGIZE_(x)
+
+#define KBDRALT_VERSION_CSV \
+    KBDRALT_VER_MAJOR, KBDRALT_VER_MINOR, KBDRALT_VER_BUILD, KBDRALT_VER_REVISION
+
+#define KBDRALT_VERSION_STR                 \
+    KBDRALT_STRINGIZE(KBDRALT_VER_MAJOR)    \
+    "." KBDRALT_STRINGIZE(KBDRALT_VER_MINOR)    \
+    "." KBDRALT_STRINGIZE(KBDRALT_VER_BUILD)    \
+    "." KBDRALT_STRINGIZE(KBDRALT_VER_REVISION)
+
+#define VS_FFI_FILEFLAGSMASK_   0x0000003FL
+#define VOS_NT_WINDOWS32_       0x00040004L
+#define VFT_DRV_                0x00000003L
+#define VFT2_DRV_SYSTEM_        0x00000007L
+
+1 VERSIONINFO
+ FILEVERSION    KBDRALT_VERSION_CSV
+ PRODUCTVERSION KBDRALT_VERSION_CSV
+ FILEFLAGSMASK  VS_FFI_FILEFLAGSMASK_
+ FILEFLAGS      0x0L
+ FILEOS         VOS_NT_WINDOWS32_
+ FILETYPE       VFT_DRV_
+ FILESUBTYPE    VFT2_DRV_SYSTEM_
+BEGIN
+    BLOCK "StringFileInfo"
+    BEGIN
+        BLOCK "040904b0"          // US English, Unicode
+        BEGIN
+            VALUE "CompanyName",      "Lafnaps"
+            VALUE "FileDescription",  "kbdralt keyboard filter driver"
+            VALUE "FileVersion",      KBDRALT_VERSION_STR
+            VALUE "InternalName",     "kbdralt.sys"
+            VALUE "LegalCopyright",   "Copyright (C) 2026 Lafnaps. Licensed under AGPL-3.0-or-later."
+            VALUE "OriginalFilename", "kbdralt.sys"
+            VALUE "ProductName",      "kbdralt"
+            VALUE "ProductVersion",   KBDRALT_VERSION_STR
+        END
+    END
+    BLOCK "VarFileInfo"
+    BEGIN
+        VALUE "Translation", 0x409, 1200
+    END
+END

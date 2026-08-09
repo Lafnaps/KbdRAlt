@@ -27,7 +27,9 @@ key→chord translation in the kernel, and nothing else.
 
 ## Status
 
-Working and tested, but **unsigned** — see *Signing* below.
+Working and tested, but **unsigned** — see *Downloads* and *Signing* below. Prebuilt
+binaries are published under [Releases](https://github.com/Lafnaps/KbdRAlt/releases); the
+driver in them cannot be loaded without signing it yourself.
 
 Verified on Windows 11 Enterprise 25H2 (build 26200), x64, in a Hyper-V VM:
 
@@ -47,7 +49,11 @@ which window is focused.
 
 A bug in a keyboard filter does not crash an application — it leaves the machine
 without a keyboard, or bugchecks it on boot. **Test in a virtual machine with
-snapshots first.** Recovery from a bad install may require Safe Mode.
+snapshots first.**
+
+The filter attaches to the keyboard *class*, so a second keyboard is not a way out.
+Read [RECOVERY.md](RECOVERY.md) before installing: On-Screen Keyboard, a one-shot boot
+with driver signature enforcement disabled, and WinRE are the routes that work.
 
 ## How it works
 
@@ -124,6 +130,17 @@ unpredictable.
 **Rules are read in `DriverEntry`, so a reboot is required after changing them.**
 `pnputil /restart-device` is not enough — the device restarts but the driver stays loaded.
 
+## Downloads
+
+Binaries are published under
+[Releases](https://github.com/Lafnaps/KbdRAlt/releases): the driver payload, and the
+configurator in a small build that needs the .NET 8 Desktop Runtime and a self-contained
+one that needs nothing. Checksums are in `SHA256SUMS.txt`; nothing is code-signed, so
+SmartScreen will object.
+
+**The published driver is unsigned and cannot be loaded as it stands.** Signing it is your
+step, and it requires the WDK. Step-by-step: [INSTALL.md](INSTALL.md).
+
 ## Building
 
 See [BUILDING.md](BUILDING.md). Short version:
@@ -132,26 +149,53 @@ See [BUILDING.md](BUILDING.md). Short version:
 msbuild kbdralt.vcxproj /p:Configuration=Release /p:Platform=x64 /t:Rebuild
 ```
 
+`KbdRAltVersion` is the single source of the version number: it feeds both the
+`VERSIONINFO` resource in `kbdralt.rc` and the INF's `DriverVer`. A release build pins the
+date too, so the INF is reproducible from the tag:
+
+```
+msbuild kbdralt.vcxproj /p:Configuration=Release /p:Platform=x64 /t:Rebuild ^
+        /p:KbdRAltVersion=0.1.0.0 /p:KbdRAltDriverVerDate=08/09/2026
+```
+
 ## Signing
 
-The driver is shipped as source only. Loading it requires either:
+Binary releases contain an **unsigned reference build**; the driver is signed by whoever
+runs it. Loading it requires either:
 
-- **test signing** — self-signed certificate, `bcdedit /set testsigning on`, Secure Boot
-  off. Fine for a VM; `package-and-sign.ps1` automates the whole flow.
+- **test signing** — a certificate *you* generate, `bcdedit /set {current} testsigning on`,
+  Secure Boot off and Memory Integrity off. Fine for a VM; `package-and-sign.ps1`
+  automates the whole flow, minting the certificate in your own store.
 - **attestation signing** by Microsoft — requires an EV code-signing certificate and a
   Partner Center account. `New-SubmissionPackage.ps1` builds the CAB for submission
   (clean unsigned `.sys`; Microsoft produces the catalog). Note that an attestation
   signature is **not accepted on Windows Server** — client editions only.
+
+No certificate is distributed with the releases, and none will be. A published signing
+certificate that users are told to trust as a root authority vouches for anything signed
+with its private key, on every machine that imports it, for the certificate's whole life.
 
 ## Scripts
 
 | Script | Purpose |
 |---|---|
 | `Set-KbdRAltRules.ps1` | write the rule table to the registry |
-| `package-and-sign.ps1` | build a test-signed package for a lab machine |
+| `package-and-sign.ps1` | sign the payload with a locally generated certificate, for a test-signing machine |
 | `New-SubmissionPackage.ps1` | build the CAB for attestation submission |
-| `deploy.ps1` | install: checks foreign filters, applies rules, handles `Scancode Map` |
+| `deploy.ps1` | install: checks code-integrity settings and foreign filters, applies rules, handles `Scancode Map` |
+| `New-Release.ps1` | build the downloadable release artifacts from a clean clone of the published repository |
 | `altgr-probe.ps1` | diagnostic: logs Raw Input vs `WH_KEYBOARD_LL` side by side |
+
+`deploy.ps1 -WhatIfOnly` runs every check and installs nothing — the right first
+invocation on any machine. `-PackageDir` overrides where it looks for the signed package;
+by default it tries the build output, then a `package\` folder beside the script, then the
+script's own folder, so an unpacked release archive works without arguments.
+
+## Third-party
+
+The IOCTL plumbing follows the `kbfiltr` sample from
+[microsoft/Windows-driver-samples](https://github.com/microsoft/Windows-driver-samples) —
+Copyright (c) Microsoft Corporation, MIT License.
 
 ## Licence
 

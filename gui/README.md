@@ -5,7 +5,8 @@ binary value the driver reads — `HKLM\SYSTEM\CurrentControlSet\Services\kbdral
 — so it is interchangeable with `Set-KbdRAltRules.ps1`. The two are verified to produce
 byte-identical output.
 
-![no screenshot yet]()
+Part of [kbdralt](https://github.com/Lafnaps/KbdRAlt). Prebuilt binaries are under
+[Releases](https://github.com/Lafnaps/KbdRAlt/releases).
 
 ## What it does
 
@@ -25,14 +26,20 @@ dotnet build -c Release
 bin\Release\net8.0-windows\KbdRAltConfig.exe
 ```
 
-Requires the .NET 8 desktop runtime. No NuGet packages: the tool builds offline from a
-clean checkout, which matters for something that configures a kernel driver.
+Running it needs the **.NET 8 Desktop Runtime (x64)** — .NET 9 or 10 alone will not do,
+because framework roll-forward does not cross major versions. Building needs the .NET 8
+SDK, whose targeting packs come with it. The project itself references **no NuGet
+packages**, which matters for something that configures a kernel driver: nothing is pulled
+from the network into the build of the tool itself.
 
-A self-contained single file, if you would rather not install a runtime:
+A self-contained single file, if you would rather not install a runtime. Note the
+backtick: this is one command, and breaking it with a caret instead silently produces an
+ordinary framework-dependent build that still needs the runtime.
 
-```
-dotnet publish -c Release -r win-x64 --self-contained true ^
-  -p:PublishSingleFile=true -p:IncludeNativeLibrariesForSelfExtract=true
+```powershell
+dotnet publish -c Release -r win-x64 --self-contained true `
+  -p:PublishSingleFile=true -p:IncludeNativeLibrariesForSelfExtract=true `
+  -p:EnableCompressionInSingleFile=true
 ```
 
 ## Two things worth knowing

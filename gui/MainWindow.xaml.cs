@@ -58,8 +58,11 @@ public partial class MainWindow : Window
         lines.Add($"UpperFilters: {(string.IsNullOrEmpty(s.UpperFilters) ? "(empty)" : s.UpperFilters)}");
 
         if (!s.ServiceInstalled)
+            // Name something the user can actually reach. This tool is downloadable on its
+            // own, so deploy.ps1 may well not exist anywhere on the machine.
             problems.Add("The driver is not installed. You can still prepare a rule table here, "
-                       + "but nothing will use it until the driver is installed with deploy.ps1.");
+                       + "but nothing will use it until the driver is installed. The driver and "
+                       + "its install instructions are at github.com/Lafnaps/KbdRAlt/releases.");
         else if (!s.FilterRegistered)
             problems.Add("The driver service exists but kbdralt is not in the keyboard class "
                        + "UpperFilters, so it is not attached to any keyboard.");
@@ -230,20 +233,20 @@ public partial class MainWindow : Window
     private void Defaults_Click(object sender, RoutedEventArgs e)
     {
         if (Dirty && MessageBox.Show(this,
-                "Replace the current list with the default rules?",
+                "Replace the current list with the driver's built-in rule?",
                 "kbdralt", MessageBoxButton.OKCancel, MessageBoxImage.Question) != MessageBoxResult.OK)
             return;
 
         _rules.Clear();
 
+        // Exactly the rule the driver falls back to on its own, and nothing else. This
+        // button used to add a CapsLock remap as well — one person's keyboard layout
+        // presented as the product default, which takes a key away from anyone who presses
+        // a button labelled "Defaults" to get back to a known state.
         var chord = new Rule { Input = new KeyRef(0x38, true), Mode = RuleMode.Chord };
         chord.Output.Add(new KeyRef(0x38, false));   // LAlt
         chord.Output.Add(new KeyRef(0x2A, false));   // LShift
         _rules.Add(chord);
-
-        var remap = new Rule { Input = new KeyRef(0x3A, false), Mode = RuleMode.Remap };
-        remap.Output.Add(new KeyRef(0x29, false));   // key left of 1
-        _rules.Add(remap);
 
         Dirty = true;
         RuleList.SelectedIndex = 0;

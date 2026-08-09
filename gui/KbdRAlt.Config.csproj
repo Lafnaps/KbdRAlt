@@ -10,13 +10,19 @@
     <AssemblyName>KbdRAltConfig</AssemblyName>
     <RootNamespace>KbdRAlt.Config</RootNamespace>
     <ApplicationManifest>app.manifest</ApplicationManifest>
-    <Version>1.0.0</Version>
+    <!-- Kept in step with the driver's KbdRAltVersion (kbdralt.vcxproj) and with the
+         release tag, so "which version do you have?" has one answer rather than three. -->
+    <Version>0.1.0</Version>
     <Company>Lafnaps</Company>
     <Product>kbdralt configurator</Product>
     <Copyright>Copyright (c) 2026 Lafnaps. AGPL-3.0-or-later</Copyright>
     <!-- No external packages on purpose: the tool must build offline from a clean
          checkout, and a configurator for a kernel driver should not pull in a
          dependency tree it does not need. -->
+    <!-- A separate .pdb makes the assembly record the ABSOLUTE path it was built at, so a
+         published binary would carry the maintainer's directory layout. Embedding costs
+         about 20 KB and keeps stack traces from users readable. -->
+    <DebugType>embedded</DebugType>
   </PropertyGroup>
 
 </Project>

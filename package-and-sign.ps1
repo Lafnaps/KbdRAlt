@@ -15,15 +15,39 @@
     invalidates the catalog.
 #>
 param(
-    [string]$Configuration = 'Debug',
+    # Release, matching BUILDING.md and deploy.ps1. It used to default to Debug, which
+    # meant a bare invocation could quietly package a stale Debug binary that happened to
+    # be lying around in the build tree.
+    [string]$Configuration = 'Release',
     [string]$Platform      = 'x64',
-    [string]$OsTarget      = '10_GE_X64',           # Germanium = Windows 11 24H2/25H2 (26xxx builds)
-    [string]$CertSubject   = 'CN=kbdralt test'
+
+    # Germanium = Windows 11 24H2/25H2 (26xxx). Vibranium and Nickel are included so a
+    # catalog built here is also accepted on Windows 10 and Windows 11 21H2-23H2.
+    [string]$OsTarget      = '10_VB_X64,10_NI_X64,10_GE_X64',
+
+    [string]$CertSubject   = 'CN=kbdralt test',
+
+    # Without a countersignature the driver stops loading the day the certificate expires.
+    # These signatures are local and short-lived, but the cost of timestamping is nil.
+    [string]$TimestampUrl  = 'http://timestamp.digicert.com'
 )
 $ErrorActionPreference = 'Stop'
 
 $root     = $PSScriptRoot
-$outDir   = Join-Path $root "$Platform\$Configuration"
+
+# Where the built payload lives. In a source tree that is x64\Release; in an unpacked
+# release archive the .sys and .inf sit next to this script. Supporting both matters:
+# a downloaded release is the only way to get the payload without installing the WDK,
+# and it is exactly the case where a hardcoded build path fails.
+$outDir = Join-Path $root "$Platform\$Configuration"
+if (-not (Test-Path (Join-Path $outDir 'kbdralt.sys'))) {
+    if (Test-Path (Join-Path $root 'kbdralt.sys')) {
+        $outDir = $root
+        "payload found next to the script (unpacked release layout)"
+    } else {
+        throw "kbdralt.sys not found in $outDir or $root — build the driver first, or run this from an unpacked release archive"
+    }
+}
 $pkgDir   = Join-Path $outDir 'package'
 $kit      = 'C:\Program Files (x86)\Windows Kits\10'
 $signtool = "$kit\bin\10.0.26100.0\x64\signtool.exe"
@@ -40,6 +64,14 @@ New-Item -ItemType Directory -Path $pkgDir | Out-Null
 Copy-Item "$outDir\kbdralt.sys" $pkgDir
 Copy-Item "$outDir\kbdralt.inf" $pkgDir
 "package: $pkgDir"
+
+# A published .sys is deliberately unsigned; signing it here is the whole point. But if
+# the input already carries a signature, appending a second one silently produces a file
+# whose first signature is the one Windows checks — say so rather than pretend.
+$inSig = Get-AuthenticodeSignature (Join-Path $pkgDir 'kbdralt.sys')
+if ($inSig.Status -ne 'NotSigned') {
+    Write-Warning "the input .sys is already signed ($($inSig.Status)). Signing again appends a second signature."
+}
 
 # --- 2. INF against signature requirements ---------------------------------
 & $infverif /h "$pkgDir\kbdralt.inf"
@@ -60,7 +92,7 @@ if (-not $cert) {
 }
 
 # --- 4. embed the signature in .sys (BEFORE the catalog) -------------------
-& $signtool sign /fd SHA256 /sha1 $cert.Thumbprint /s My "$pkgDir\kbdralt.sys"
+& $signtool sign /fd SHA256 /tr $TimestampUrl /td SHA256 /sha1 $cert.Thumbprint /s My "$pkgDir\kbdralt.sys"
 if ($LASTEXITCODE -ne 0) { throw "signtool on .sys returned $LASTEXITCODE" }
 
 # --- 5. catalog ------------------------------------------------------------
@@ -68,20 +100,36 @@ if ($LASTEXITCODE -ne 0) { throw "signtool on .sys returned $LASTEXITCODE" }
 if ($LASTEXITCODE -ne 0) { throw "Inf2Cat returned $LASTEXITCODE" }
 
 # --- 6. sign the catalog ---------------------------------------------------
-& $signtool sign /fd SHA256 /sha1 $cert.Thumbprint /s My "$pkgDir\kbdralt.cat"
+& $signtool sign /fd SHA256 /tr $TimestampUrl /td SHA256 /sha1 $cert.Thumbprint /s My "$pkgDir\kbdralt.cat"
 if ($LASTEXITCODE -ne 0) { throw "signtool on .cat returned $LASTEXITCODE" }
 
 # --- 7. export the certificate for the lab machine -------------------------
 $cerPath = Join-Path $pkgDir 'kbdralt-test.cer'
 Export-Certificate -Cert $cert -FilePath $cerPath | Out-Null
 
+# --- 8. the scripts the package needs to be installable --------------------
+# deploy.ps1 looks for Set-KbdRAltRules.ps1 next to itself; without both, an install
+# silently falls back to the driver's built-in rule.
+foreach ($s in 'deploy.ps1', 'Set-KbdRAltRules.ps1') {
+    $src = Join-Path $root $s
+    if (Test-Path $src) { Copy-Item $src $pkgDir }
+}
+
 "=== done ==="
+$signedSys = Join-Path $pkgDir 'kbdralt.sys'
+"packaged driver : {0}" -f ((Get-Item $signedSys).VersionInfo.FileVersion)
+"SHA256          : {0}" -f (Get-FileHash $signedSys -Algorithm SHA256).Hash.ToLower()
+"DriverVer       : {0}" -f (Select-String -Path (Join-Path $pkgDir 'kbdralt.inf') -Pattern '^\s*DriverVer\s*=').Line.Trim()
 Get-ChildItem $pkgDir | Select-Object Name, Length | Format-Table -AutoSize
 
 # Informational. Verification here WILL fail ("0 files verified"): the certificate is
-# self-signed and is not in this machine's trusted roots — nor should it be. Trust is
-# established only on the lab machine, by importing the .cer into Root and
-# TrustedPublisher.
+# self-signed and is not in this machine's trusted roots — nor should it be.
+#
+# Trust is established only on a THROWAWAY TEST VM, by importing this .cer into Root and
+# TrustedPublisher. Understand what that does: a certificate in the machine Root store is
+# not scoped to kernel drivers or to this project. Anything signed with its private key
+# shows up as a trusted publisher on that machine, for the certificate's whole lifetime,
+# with no revocation. Do it on a VM you are willing to throw away, and nowhere else.
 "--- catalog signature (trust is not expected to validate here) ---"
 & $signtool verify /pa /v "$pkgDir\kbdralt.cat" 2>&1 |
     Select-String 'Issued to|SHA1 hash|Number of files' | Out-String
