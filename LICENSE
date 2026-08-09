@@ -1,0 +1,55 @@
+kbdralt — Licence
+=================
+
+Copyright (c) 2026 Lafnaps
+
+This project is dual-licensed. Choose the track that applies to you.
+
+--------------------------------------------------------------------------------
+1. NON-COMMERCIAL USE — free, under GNU AGPL v3 plus the restriction below
+--------------------------------------------------------------------------------
+
+You may use, study, modify and redistribute this software free of charge for
+NON-COMMERCIAL purposes, under the terms of the GNU Affero General Public
+License, version 3 (see LICENSE.AGPL), with one additional restriction:
+
+    Commercial use is not granted by this track. "Commercial use" means use by
+    or on behalf of a for-profit entity, or any use whose primary purpose is
+    commercial advantage or monetary compensation. Personal use, use by
+    individuals, education, academic research, and use by non-profit
+    organisations are NOT commercial use.
+
+What the AGPL means for you in practice: if you distribute this software, or a
+modified version of it, or you build something on top of it and let others use
+it, you must make the complete corresponding source code available under the
+same terms. Keeping your changes private while shipping them to others is not
+permitted.
+
+Note on terminology: because of the non-commercial restriction, this track is
+NOT an OSI-approved open source licence and this project should not be described
+as "open source" without qualification. The restriction is deliberate; the source
+is published so that it can be read, audited, learned from and improved.
+
+--------------------------------------------------------------------------------
+2. COMMERCIAL USE — separate licence required
+--------------------------------------------------------------------------------
+
+For commercial use, or if you want to use this software without the AGPL
+source-disclosure obligation, a commercial licence is required. Contact the
+copyright holder via https://github.com/Lafnaps to arrange one.
+
+--------------------------------------------------------------------------------
+NO WARRANTY
+--------------------------------------------------------------------------------
+
+THIS SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS
+FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR
+COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER
+IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
+CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+
+This disclaimer deserves emphasis for this particular project: kbdralt is
+kernel-mode code. A defect can leave a machine without a working keyboard or
+prevent it from booting. Test in a virtual machine with snapshots before
+installing anywhere you care about.

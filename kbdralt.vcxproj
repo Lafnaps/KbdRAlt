@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" ToolsVersion="15.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup Label="ProjectConfigurations">
+    <ProjectConfiguration Include="Debug|x64">
+      <Configuration>Debug</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|x64">
+      <Configuration>Release</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+  </ItemGroup>
+  <PropertyGroup Label="Globals">
+    <ProjectGuid>{8F3A2B10-4C7D-4E21-9A55-0C1E2F3A4B6C}</ProjectGuid>
+    <TargetVersion>Windows10</TargetVersion>
+    <DriverType>KMDF</DriverType>
+    <KMDF_VERSION_MAJOR>1</KMDF_VERSION_MAJOR>
+    <RootNamespace>kbdralt</RootNamespace>
+    <ConfigurationType>Driver</ConfigurationType>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
+  <PropertyGroup Label="Configuration">
+    <PlatformToolset>WindowsKernelModeDriver10.0</PlatformToolset>
+    <UseDebugLibraries Condition="'$(Configuration)'=='Debug'">true</UseDebugLibraries>
+    <UseDebugLibraries Condition="'$(Configuration)'=='Release'">false</UseDebugLibraries>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+  <PropertyGroup>
+    <SpectreMitigation>Spectre</SpectreMitigation>
+    <!--
+      This machine only compiles. Test signing happens in the VM, production signing is
+      Microsoft attestation, so auto-generating a test certificate is disabled: it needs
+      elevation and is pointless here.
+    -->
+    <SignMode>Off</SignMode>
+    <!--
+      Package verification is run explicitly against the packaged INF with the standalone
+      infverif, because the in-build task depends on an x86 InfVerif.dll that WDK 26100
+      does not ship. See BUILDING.md.
+    -->
+    <SkipPackageVerification>true</SkipPackageVerification>
+    <!-- The catalog is produced during packaging, before signing, not during the build. -->
+    <EnableInf2cat>false</EnableInf2cat>
+  </PropertyGroup>
+  <ItemDefinitionGroup>
+    <ClCompile>
+      <WarningLevel>Level4</WarningLevel>
+      <TreatWarningAsError>true</TreatWarningAsError>
+    </ClCompile>
+  </ItemDefinitionGroup>
+  <ItemGroup>
+    <ClCompile Include="kbdralt.c" />
+    <ClCompile Include="rules.c" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="kbdralt.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <Inf Include="kbdralt.inf" />
+  </ItemGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+</Project>

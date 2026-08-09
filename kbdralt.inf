@@ -1,0 +1,71 @@
+;
+; kbdralt.inf — keyboard class upper filter (primitive driver).
+;
+; Registers the kbdralt service and adds it to the Keyboard class UpperFilters, so the
+; filter sits above kbdclass for EVERY keyboard in the system. It is not bound to any
+; particular device, which is why there are no [Manufacturer]/[Models] sections: this is
+; a primitive driver, installed with `pnputil /add-driver kbdralt.inf /install`.
+;
+; Sections are architecture-decorated (.NTamd64) — a modern infverif rejects undecorated
+; ones.
+;
+
+[Version]
+Signature   = "$WINDOWS NT$"
+Class       = Keyboard
+ClassGuid   = {4D36E96B-E325-11CE-BFC1-08002BE10318}
+Provider    = %ProviderName%
+CatalogFile = kbdralt.cat
+DriverVer   =
+PnpLockdown = 1
+
+[SourceDisksNames]
+1 = %DiskName%
+
+[SourceDisksFiles]
+kbdralt.sys = 1
+
+[DestinationDirs]
+kbdralt.CopyFiles = 13          ; DIRID_DRIVER_STORE — the package folder in the Driver Store
+
+; ---------------------------------------------------------------------------
+; amd64
+; ---------------------------------------------------------------------------
+
+[DefaultInstall.NTamd64]
+CopyFiles = kbdralt.CopyFiles
+AddReg    = kbdralt.AddReg
+
+[DefaultInstall.NTamd64.Services]
+AddService = kbdralt,,kbdralt.Service
+
+[kbdralt.CopyFiles]
+kbdralt.sys
+
+; ORDER MATTERS. UpperFilters lists drivers bottom-up: the first entry sits closest to
+; the port driver, the last one sits highest. We must be BELOW kbdclass, because we
+; intercept IOCTL_INTERNAL_KEYBOARD_CONNECT, which kbdclass sends DOWNWARD. So "kbdralt"
+; has to come BEFORE "kbdclass".
+;
+; With FLG_ADDREG_APPEND (0x00010008) we would land at the end of the list and the stack
+; would come out as kbdralt -> kbdclass -> <port> (top to bottom): the driver loads, the
+; service reports Running, and it is completely inert because CONNECT never reaches it.
+;
+; 0x00010000 = FLG_ADDREG_TYPE_MULTI_SZ, the value is set as a whole.
+; WARNING: this OVERWRITES any existing UpperFilters. Before installing on a machine,
+; check for third-party keyboard filters (vendor utilities sometimes add them) and, if
+; present, include them in the list by hand. deploy.ps1 performs that check.
+[kbdralt.AddReg]
+HKLM,System\CurrentControlSet\Control\Class\{4D36E96B-E325-11CE-BFC1-08002BE10318},UpperFilters,0x00010000,"kbdralt","kbdclass"
+
+[kbdralt.Service]
+DisplayName   = %ServiceDesc%
+ServiceType   = 1               ; SERVICE_KERNEL_DRIVER
+StartType     = 3               ; SERVICE_DEMAND_START — PnP loads it when building the stack
+ErrorControl  = 1               ; SERVICE_ERROR_NORMAL: a failure does not block boot
+ServiceBinary = %13%\kbdralt.sys
+
+[Strings]
+ProviderName = "kbdralt"
+DiskName     = "kbdralt Install Disk"
+ServiceDesc  = "kbdralt keyboard remapping filter"
