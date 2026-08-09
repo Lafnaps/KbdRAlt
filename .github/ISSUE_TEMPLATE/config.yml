@@ -1,0 +1,26 @@
+# Blank issues are off on purpose. Almost everything people will want to say about a driver
+# at this stage is a question or a design opinion, and both belong in Discussions where they
+# can be answered and left readable. The one thing that genuinely needs the issue tracker is
+# a reproducible defect, and that has a form.
+blank_issues_enabled: false
+
+contact_links:
+  - name: My keyboard stopped working
+    url: https://github.com/Lafnaps/KbdRAlt/blob/main/RECOVERY.md
+    about: >-
+      Read this first, not the issue tracker. A second keyboard will not help — this is a
+      class filter and it attaches to every keyboard in the machine. On-Screen Keyboard,
+      a one-shot boot with driver signature enforcement disabled, and WinRE are the routes
+      that work.
+
+  - name: Question, or "would this work for my case?"
+    url: https://github.com/Lafnaps/KbdRAlt/discussions/categories/q-a
+    about: >-
+      Anything about installing, signing, rule syntax, or whether this fits what you are
+      trying to do.
+
+  - name: Design feedback
+    url: https://github.com/Lafnaps/KbdRAlt/discussions/categories/ideas
+    about: >-
+      The most useful thing you can tell me right now — is a rules-table-only driver with no
+      user-mode API the right shape, and would you use it once it is attestation-signed?

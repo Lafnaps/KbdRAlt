@@ -220,6 +220,17 @@ The IOCTL plumbing follows the `kbfiltr` sample from
 [microsoft/Windows-driver-samples](https://github.com/microsoft/Windows-driver-samples) —
 Copyright (c) Microsoft Corporation, MIT License.
 
+## Feedback
+
+The driver works and is tested, but it is pre-signature, so the most useful thing you can
+tell me is not a bug report. It is whether a rules-table-only driver with no user-mode API
+is the right shape at all, and whether you would use it once it is attestation-signed — the
+certificate is the expensive irreversible step, and I would rather find out before than
+after. [Discussions → Ideas](https://github.com/Lafnaps/KbdRAlt/discussions/categories/ideas)
+for that, [Q&A](https://github.com/Lafnaps/KbdRAlt/discussions/categories/q-a) for questions,
+[issues](https://github.com/Lafnaps/KbdRAlt/issues/new/choose) for reproducible defects.
+See [CONTRIBUTING.md](CONTRIBUTING.md).
+
 ## Licence
 
 **GNU AGPL v3** — see [LICENSE](LICENSE).

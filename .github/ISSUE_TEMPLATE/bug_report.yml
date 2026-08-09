@@ -1,0 +1,130 @@
+name: Bug report
+description: Something is reproducibly wrong with the driver or the scripts
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        **If your keyboard is dead right now, close this and read
+        [RECOVERY.md](https://github.com/Lafnaps/KbdRAlt/blob/main/RECOVERY.md).** Getting a
+        usable session back comes first; the report can wait.
+
+        The two fields below marked **required for triage** answer most of what I would
+        otherwise have to ask you for. Please do not skip them — the single most common
+        failure in this driver is invisible without the stack output.
+
+  - type: checkboxes
+    id: prereqs
+    attributes:
+      label: Before reporting
+      options:
+        - label: I rebooted after installing or after changing rules. The driver reads its table in `DriverEntry`, and `pnputil /restart-device` does not re-read it.
+          required: true
+        - label: This is a defect, not a question. Questions go to [Discussions](https://github.com/Lafnaps/KbdRAlt/discussions).
+          required: true
+
+  - type: textarea
+    id: stack
+    attributes:
+      label: Keyboard device stack — required for triage
+      description: >-
+        This one line separates "the driver is not working" from "the driver is not even
+        attached", which look identical from the outside. Expected output contains
+        `\Driver\kbdclass -> \Driver\kbdralt -> ...`. If `kbdralt` appears BEFORE `kbdclass`,
+        the filter order is wrong: the driver loads, the service reports Running, and it does
+        nothing at all.
+      render: text
+      value: |
+        Get-PnpDevice -Class Keyboard -Status OK | ForEach-Object {
+            (Get-PnpDeviceProperty -InstanceId $_.InstanceId -KeyName DEVPKEY_Device_Stack).Data -join ' -> '
+        }
+
+        <paste the output here>
+    validations:
+      required: true
+
+  - type: textarea
+    id: version
+    attributes:
+      label: Driver version — required for triage
+      description: >-
+        The binary is **not** in `System32\drivers`; a primitive driver package stays in the
+        Driver Store, so the obvious path returns nothing. Follow the service's `ImagePath`.
+      render: text
+      value: |
+        $ip = (Get-ItemProperty 'HKLM:\SYSTEM\CurrentControlSet\Services\kbdralt').ImagePath
+        (Get-Item ($ip -replace '^\\SystemRoot\\', "$env:SystemRoot\")).VersionInfo |
+            Format-List FileVersion, CompanyName
+
+        <paste the output here>
+    validations:
+      required: true
+
+  - type: dropdown
+    id: signing
+    attributes:
+      label: How is the driver signed?
+      description: >-
+        The published build is unsigned and cannot load, so if you are running it at all you
+        signed it yourself.
+      options:
+        - Self-signed via package-and-sign.ps1, machine in test signing mode
+        - Self-signed with my own certificate and process
+        - Microsoft attestation signature
+        - It is not loading and I am not sure
+    validations:
+      required: true
+
+  - type: textarea
+    id: codeintegrity
+    attributes:
+      label: Code integrity settings
+      description: >-
+        Only needed if the driver will not load. All three gates have to be open for a
+        self-signed kernel driver.
+      render: text
+      value: |
+        bcdedit /enum '{current}' | Select-String testsigning
+        try { "SecureBoot: " + (Confirm-SecureBootUEFI) } catch { "SecureBoot: n/a" }
+        "HVCI running: " + ((Get-CimInstance -Namespace root\Microsoft\Windows\DeviceGuard -ClassName Win32_DeviceGuard).SecurityServicesRunning -contains 2)
+
+  - type: input
+    id: windows
+    attributes:
+      label: Windows version
+      description: Output of `winver`, or `[Environment]::OSVersion.Version`. Say if it is a VM and which hypervisor.
+      placeholder: "Windows 11 Enterprise 25H2, build 26200, Hyper-V Gen 2 VM"
+    validations:
+      required: true
+
+  - type: textarea
+    id: rules
+    attributes:
+      label: Your rule table
+      description: The rules you configured, in the syntax `Set-KbdRAltRules.ps1` takes.
+      render: text
+      placeholder: |
+        E0:38 = chord : 38,2A
+        3A    = remap : 29
+
+  - type: textarea
+    id: what
+    attributes:
+      label: What happens, and what you expected
+      description: >-
+        Include how you are producing the keystroke — a physical keyboard, a VM's virtual
+        keyboard, RDP, or an on-screen keyboard. They do not all take the same path, and the
+        difference has misled me before.
+    validations:
+      required: true
+
+  - type: markdown
+    attributes:
+      value: |
+        ---
+        One thing worth ruling out before you write, because it cost me an hour once: a stuck
+        modifier silently breaks layout switching, and it breaks it for a plain `Alt+Shift`
+        pressed by hand too — so it looks exactly like a driver fault while the driver is
+        fine. If switching has stopped working, first check whether pressing `Alt+Shift`
+        directly still switches. Rebooting the machine does **not** clear it; sending the
+        break codes of every modifier does.
